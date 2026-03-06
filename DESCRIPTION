@@ -1,0 +1,26 @@
+Package: SIdrfDLNM
+Type: Package
+Title: Single Index Distributed Response Function - Distributed Lag Non-Linear Models 
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Tianyi", "Pan",
+      email = "tianyi.pan@uwaterloo.ca",
+      role = c("aut", "cre")
+    )
+  )
+Description: Fit single index distributed response function distributed lag non-linear models
+License: GPL (>= 3)
+Encoding: UTF-8
+Imports: 
+    Rcpp (>= 1.0.12),
+    RcppEigen,
+    Matrix,
+    mgcv,
+		ggplot2,
+		dplyr,
+		dlnm
+LinkingTo: Rcpp, RcppEigen
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+LazyData: true
