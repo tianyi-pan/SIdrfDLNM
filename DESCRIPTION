@@ -19,7 +19,8 @@ Imports:
     mgcv,
 		ggplot2,
 		dplyr,
-		dlnm
+		dlnm,
+		mDLNM
 LinkingTo: Rcpp, RcppEigen
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

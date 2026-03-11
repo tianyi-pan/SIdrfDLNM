@@ -1,30 +1,21 @@
-#' Compute NCV
-#'
-#' @param object An object.
-#' @param ... Passed to methods.
-#' @export
-NCV <- function(object, ...) {
-  UseMethod("NCV")
-}
-
 #' Title Calculate NCV
 #'
 #' @param object object of class \code{sidDLNM_fit}.
 #' @param kNCV number of neighbors on each side, default \code{0} which is LOOCV.
 #' @param NCV.nthreads number of threads for NCV calculation, default \code{1}.
 #' @param verbose whether to print messages during the process, default \code{FALSE}.
-#' 
+#'
 #' @return
 #' @importFrom mgcv s
 #' @importFrom data.table as.data.table
 #' @importFrom data.table setorder
 #' @method NCV sidDLNM_fit
-#' @export
+#' @exportS3Method mDLNM::NCV
 NCV.sidDLNM_fit <- function(object, kNCV = 0, NCV.nthreads = 1, verbose = FALSE, ...) {
 
   if(verbose) cat("reconstruct the model class for cpp ... \n")
   dat <- object$inputdata
- 
+
   smooth = object$formula$smooth
   formula = object$formula$formula
   fe.cont = object$formula$fe.cont
@@ -163,7 +154,7 @@ NCV.sidDLNM_fit <- function(object, kNCV = 0, NCV.nthreads = 1, verbose = FALSE,
   B_inner <- lapply(B_inner.list, function(xx) xx[!na.id, ])
 
 
-  
+
   ### prepare NCV. construct a list for neighborhood of i
   sXdat$ii <- 1:nrow(sXdat)
   if(!is.null(group_name)) {
@@ -333,7 +324,7 @@ NCV.sidDLNM_fit <- function(object, kNCV = 0, NCV.nthreads = 1, verbose = FALSE,
   if(verbose) cat("finished the model class for cpp ... \n")
 
   NCVresults <- NCVsidDLNM(mod.address, nei.list, verbose, NCV.nthreads)
-  
+
 
   return(NCVresults)
 }
