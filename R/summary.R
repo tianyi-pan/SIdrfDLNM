@@ -40,29 +40,29 @@ summary.sidDLNM_fit <- function(object, E.eval, l.eval, others.eval = NULL,
   if(missingArg(E.eval)) E.eval <- seq(E.mode.quantile[1], E.mode.quantile[2], length.out = 100)
   if(missingArg(l.eval)) l.eval <- seq(0, maxL)
 
-  Blag <- sapply(seq(0, maxL), function(l0) sidDLNM:::Bsplinevec2(l0, object$data$knots_w, 4))
+  Blag <- sapply(seq(0, maxL), function(l0) SIdrfDLNM:::Bsplinevec2(l0, object$data$knots_w, 4))
 
   if(!(Q1 %in% E.eval)) E.eval <- c(Q1, E.eval)
   if(!(Q3 %in% E.eval)) E.eval <- c(Q3, E.eval)
   E.eval <- sort(E.eval)
 
 
-  # sidDLNM:::SurfaceEval(E0, cen, l0, alpha_f,
+  # SIdrfDLNM:::SurfaceEval(E0, cen, l0, alpha_f,
   #             object$data$knots_f, object$data$Zf, Blag)
   # (basisfunEl(E0, l) - basisfunElcen(l0)) %*% alpha_f
 
   # basisfunEl <- function(E0, l0) {
-  #   sidDLNM:::Bsplinevec2Con(E0, object$data$knots_f, 4, object$data$Zf) %x% sidDLNM:::Bsplinevec2(l0, object$data$knots_w, 4)
+  #   SIdrfDLNM:::Bsplinevec2Con(E0, object$data$knots_f, 4, object$data$Zf) %x% SIdrfDLNM:::Bsplinevec2(l0, object$data$knots_w, 4)
   # }
   # basisfunElcen <- function(l0) {
-  #   sidDLNM:::Bsplinevec2Con(cen, object$data$knots_f, 4, object$data$Zf) %x% sidDLNM:::Bsplinevec2(l0, object$data$knots_w, 4)
+  #   SIdrfDLNM:::Bsplinevec2Con(cen, object$data$knots_f, 4, object$data$Zf) %x% SIdrfDLNM:::Bsplinevec2(l0, object$data$knots_w, 4)
   # }
 
   gridEl <- expand.grid(E = E.eval,
                         l = l.eval)
 
   surface.mode <- apply(gridEl, 1, function(row.) {
-    sidDLNM:::SurfaceEval(row.[1], cen, row.[2], alpha_f,
+    SIdrfDLNM:::SurfaceEval(row.[1], cen, row.[2], alpha_f,
                           object$data$knots_f, object$data$Zf, Blag)
   })
 
@@ -89,7 +89,7 @@ summary.sidDLNM_fit <- function(object, E.eval, l.eval, others.eval = NULL,
   #
   #     surface.i <- apply(gridEl, 1, function(row.) {
   #       # (basisfunEl(row.[1], row.[2]) - basisfunElcen(row.[2])) %*% alpha_f_sample
-  #       sidDLNM:::SurfaceEval(row.[1], cen, row.[2], alpha_f_sample,
+  #       SIdrfDLNM:::SurfaceEval(row.[1], cen, row.[2], alpha_f_sample,
   #                             object$data$knots_f, object$data$Zf, Blag)
   #     })
   #
@@ -101,7 +101,7 @@ summary.sidDLNM_fit <- function(object, E.eval, l.eval, others.eval = NULL,
   #   summarize(ll = quantile(est, 0.025), ul = quantile(est, 0.975))
 
   ## faster implementation in cpp
-  surface.sample <- sidDLNM:::SurfaceCI(as.matrix(gridEl), object$CI.sample$alpha_f_sample, cen,
+  surface.sample <- SIdrfDLNM:::SurfaceCI(as.matrix(gridEl), object$CI.sample$alpha_f_sample, cen,
                         object$data$knots_f, object$data$Zf, Blag)
 
 
