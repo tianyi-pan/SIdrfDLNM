@@ -430,7 +430,7 @@ List sidDLNMCI(SEXP ptr,
   int mE = modelobj.mE;
   int kbetaR = modelobj.kbetaR;
   int kbetaF = modelobj.kbetaF;
-  Eigen::MatrixXd R_B_inner(n, kE);
+  
 
   int paraSize = kE+mE-1+kbetaR+kbetaF;
   int paraSizefull;
@@ -499,6 +499,8 @@ List sidDLNMCI(SEXP ptr,
     Lseq(l) = (double) l;
   }
 
+  Eigen::MatrixXd R_B_inner(n, L+1);
+  
   for (int j = 0; j < (L+1); j++) {
     Blag.col(j) = Bsplinevec(Lseq(j), R_knots_w, 4);
   }
