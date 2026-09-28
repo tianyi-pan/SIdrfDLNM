@@ -14,3 +14,7 @@
 \description{
 Title Rate Ratio for sidDLNM_fit objects
 }
+
+\details{
+Rate ratios are available only for NB fits; Gaussian identity-link fits are not supported.
+}

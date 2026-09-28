@@ -39,10 +39,13 @@ SIdrfDLNM(
   check.BFGS = FALSE,
   maxit.LAML = 150,
   tmp.file = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  family = "nb"
 )
 }
 \arguments{
+\item{family}{Outcome family: "nb" (default) or "gaussian". Gaussian uses the identity link, zero offsets, and theta as the standard deviation. Log(theta) is optimized with default bounds [-4, 10] (NB: [-2, 10]).}
+
 \item{formula}{the formula for the effect of exposure at time t regarding the
 exposure history. Use sX() for the distributed lag term. For example y ~
 sX(t, x).}

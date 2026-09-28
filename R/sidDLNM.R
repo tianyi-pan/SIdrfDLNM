@@ -33,6 +33,9 @@
 #'   in the outer optimization. For example, set \code{par.fix = c(10,NA,NA)}
 #'   for fixing log(theta)=10 if the prior knowledge believes there is no
 #'   over-dispersion.
+#' @param family outcome family: \code{"nb"} (default) for negative binomial
+#'   outcomes with a log link, or \code{"gaussian"} for Gaussian outcomes with
+#'   an identity link and variance theta squared.
 #' @param upper.bound the upper bound of parameters in BFGS.
 #' @param fit whether or not to fit the model. If \code{fit = FALSE}, the model 
 #'   will be evalutated at the given parameters in \code{par.start}. 
@@ -81,7 +84,13 @@ SIdrfDLNM <- function(formula,
                     check.BFGS = FALSE,
                     maxit.LAML = 150,
                     tmp.file = NULL,
-                    verbose = TRUE) {
+                    verbose = TRUE,
+                    family = "nb") {
+
+  if(!is.character(family) || length(family) != 1L || is.na(family) ||
+     !family %in% c("nb", "gaussian")) stop("family must be 'nb' or 'gaussian'.")
+  gaussian <- identical(family, "gaussian")
+
 
   if(length(formula) != 3) stop("Incorrect formula. Please set a formula for example y~sX(t,x).")
   sXobject <- eval(formula[[3]])
@@ -329,7 +338,7 @@ SIdrfDLNM <- function(formula,
   ### END following https://github.com/awstringer1/mam/blob/master/R/mam.R #######
 
   ## 2.4 offset
-  if(!is.null(offset)) {
+  if(!gaussian && !is.null(offset)) {
     Xoffset.original <- as.vector(stats::model.matrix(offset,data=sXdat)[,-1,drop=F])
     Xoffset.original.min <- min(Xoffset.original)
     Xoffset <- Xoffset.original - Xoffset.original.min
@@ -350,7 +359,7 @@ SIdrfDLNM <- function(formula,
 
 
   if(missingArg(upper.bound)) upper.bound <- c(10, 20, 20)
-  lower.bound <- c(-2,-8,-8)
+  lower.bound <- c(ifelse(gaussian,-4,-2),-8,-8)
 
 
   SSf <- mgcv::smoothCon(s(E, bs = "bs", k = kE), absorb.cons = FALSE,
@@ -508,7 +517,7 @@ SIdrfDLNM <- function(formula,
                                  alpha_f.init,
                                  delta.init,
                                  log_theta.given, log_smoothing_f.given, log_smoothing_w.given,
-                                 betaR.init, betaF.init, logsmoothing.given)
+                                 betaR.init, betaF.init, logsmoothing.given, gaussian)
     }
     if(verbose) cat("Done.")
     mod.build
@@ -630,20 +639,39 @@ SIdrfDLNM <- function(formula,
         y.mean <- mean(sXdat$y, na.rm = TRUE)
 
         suppressWarnings(
-          dDLNM.fit <- dDLNM(formula.list, x.names.list, kE, kw, sXdat, Bindex, M, maxL, verbose, delta.init.default)
+          dDLNM.fit <- dDLNM(formula.list, x.names.list, kE, kw, sXdat, Bindex, M, maxL, verbose, delta.init.default, family = family)
         )
         mod.mgcv <- dDLNM.fit$mod.mgcv
 
-        par.start[1] <- max(family(mod.mgcv)$getTheta(), log(2*y.mean)) # choose a larger theta if theta from bam() is smaller than 2*mean(y). Var = mu + mu^2/theta. i.e. init. var = 1.5*mu
-        par.start[2] <- log(mod.mgcv$sp)[1]
-        par.start[3] <- log(mod.mgcv$sp)[2]
-        if(length(par.start) > 3) par.start[4:length(par.start)] <- log(mod.mgcv$sp)[-c(1,2)]
-        if(par.start[1] > 7) par.start[1] <- 7 # do not set a huge log(theta)
-        if(par.start[2] > 18) par.start[2] <- 18 # do not set a huge log(smoothing_f)
-        if(par.start[3] > 15) par.start[3] <- 15 # do not set a huge log(smoothing_w)
+        if(gaussian) {
+          sigma2 <- mod.mgcv$sig2
+          if(length(sigma2) != 1L || !is.finite(sigma2) || sigma2 <= 0) {
+            stop("Gaussian initialization requires a positive finite residual variance from mgcv::bam; supply par.start explicitly.")
+          }
+          par.start[1] <- 0.5 * log(sigma2)
+          log.precision <- log(mod.mgcv$sp) - log(sigma2)
+          par.start[2] <- log.precision[1]
+          par.start[3] <- log.precision[2]
+          if(length(par.start) > 3) par.start[4:length(par.start)] <- log.precision[-c(1,2)]
+          if(par.start[1] > 7) par.start[1] <- 7
+          if(par.start[1] < -2) par.start[1] <- 0
+          if(par.start[2] > 11) par.start[2] <- 11
+          if(par.start[3] > 15) par.start[3] <- 15
+          for (i in 2:length(par.start)) {
+            if((par.start[i] > (upper.bound[i] - 1)) | (par.start[i] < lower.bound[i])) par.start[i] <- 7
+          }
+        } else {
+          par.start[1] <- max(family(mod.mgcv)$getTheta(), log(2*y.mean)) # choose a larger theta if theta from bam() is smaller than 2*mean(y). Var = mu + mu^2/theta. i.e. init. var = 1.5*mu
+          par.start[2] <- log(mod.mgcv$sp)[1]
+          par.start[3] <- log(mod.mgcv$sp)[2]
+          if(length(par.start) > 3) par.start[4:length(par.start)] <- log(mod.mgcv$sp)[-c(1,2)]
+          if(par.start[1] > 7) par.start[1] <- 7 # do not set a huge log(theta)
+          if(par.start[2] > 18) par.start[2] <- 18 # do not set a huge log(smoothing_f)
+          if(par.start[3] > 15) par.start[3] <- 15 # do not set a huge log(smoothing_w)
 
-        for (i in 1:length(par.start)) {
-          if((par.start[i] > (upper.bound[i] - 1)) | (par.start[i] < lower.bound[i])) par.start[i] <- 7
+          for (i in 1:length(par.start)) {
+            if((par.start[i] > (upper.bound[i] - 1)) | (par.start[i] < lower.bound[i])) par.start[i] <- 7
+          }
         }
         if(verbose) cat("Use results from dlnm package and mgcv::bam as the initial guess for BFGS. \n ")
       },
@@ -931,6 +959,7 @@ SIdrfDLNM <- function(formula,
 
   if(!is.null(tmp.file)) {
     out.tmp <- structure(out, class = "sidDLNM_fit")
+    out.tmp$family <- family
     save(out.tmp, file = tmp.file)
     cat("Temporary file saved to ", tmp.file, "\n")
   }
@@ -960,6 +989,7 @@ SIdrfDLNM <- function(formula,
 
   if(!is.null(tmp.file)) {
     out.tmp <- structure(out, class = "sidDLNM_fit")
+    out.tmp$family <- family
     save(out.tmp, file = tmp.file)
     cat("Temporary file saved to ", tmp.file, "\n")
   }
@@ -980,9 +1010,11 @@ SIdrfDLNM <- function(formula,
 
   if(!is.null(tmp.file)) {
     out.tmp <- structure(out, class = "sidDLNM_fit")
+    out.tmp$family <- family
     save(out.tmp, file = tmp.file)
     cat("Temporary file saved to ", tmp.file, "\n")
   }
 
+  out$family <- family
   structure(out, class = "sidDLNM_fit") # S3 class
 }

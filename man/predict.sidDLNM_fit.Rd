@@ -20,3 +20,7 @@
 \description{
 Title Obtain predictions from the fitted model by sidDLNM
 }
+
+\details{
+For Gaussian fits, eta and its intervals are on the response-mean scale, not future-observation prediction intervals. Offsets are zero.
+}

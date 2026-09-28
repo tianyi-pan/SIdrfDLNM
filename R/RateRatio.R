@@ -1,5 +1,7 @@
 #' Title Rate Ratio for sidDLNM_fit objects
 #'
+#' @details Rate ratios are available only for NB fits; Gaussian identity-link
+#'   fits are not supported.
 #' @param object object of class \code{sidDLNM_fit}.
 #' @param verbose whether to print messages during the process, default \code{FALSE}.
 #'
@@ -7,6 +9,7 @@
 #' @importFrom mgcv s
 #' @exportS3Method mDLNM::RateRatio
 RateRatio.sidDLNM_fit <- function(object, x0, x1, verbose = FALSE, ...) {
+  if(identical(object$family, "gaussian")) stop("Rate ratios are not defined for Gaussian identity-link fits.")
 
 
   pc <- object$data$pc

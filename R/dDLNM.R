@@ -4,6 +4,7 @@
 #' @param kE
 #' @param sXdat
 #' @param M
+#' @param family Outcome family: "nb" (default) or "gaussian" with identity link.
 #' @param verbose
 #'
 #' @returns
@@ -11,7 +12,12 @@
 #' @import mgcv
 #' @import dlnm
 #' @export
-dDLNM <- function(formula.list, x.names.list, kE, kw, sXdat, Bindex, M, maxL, verbose, con.index.init) {
+dDLNM <- function(formula.list, x.names.list, kE, kw, sXdat, Bindex, M, maxL, verbose, con.index.init, family = "nb") {
+
+  if(!is.character(family) || length(family) != 1L || is.na(family) ||
+     !family %in% c("nb", "gaussian")) stop("family must be 'nb' or 'gaussian'.")
+  gaussian <- identical(family, "gaussian")
+
 
   if(verbose) cat("Fitting a DRF-DLNM using dlnm package and mgcv::bam() to obtain init ... \n")
   alpha <- c(1,con.index.init)
@@ -46,7 +52,7 @@ dDLNM <- function(formula.list, x.names.list, kE, kw, sXdat, Bindex, M, maxL, ve
 
 
   b.opt <- bam(formula.mgcv.pen,
-               family=nb(),
+               family=if(gaussian) stats::gaussian(link = "identity") else nb(),
                data = sXdat,
                paraPen=list(cb=cbPengam),
                method = "REML")

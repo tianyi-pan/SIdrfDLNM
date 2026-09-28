@@ -65,8 +65,8 @@ Interpolate <- function(X, y) {
     .Call(`_SIdrfDLNM_Interpolate`, X, y)
 }
 
-sidDLNMbuild <- function(R_y, R_B_inner_list, R_knots_f, R_knots_w, R_Sw, R_SwR, R_Sf, R_SfR, R_Xrand, R_Xfix, R_Zf, R_Xoffset, R_r, R_Bindex, R_alpha_f, R_con_index_par, R_log_theta, R_log_smoothing_f, R_log_smoothing_w, R_betaR, R_betaF, R_logsmoothing) {
-    .Call(`_SIdrfDLNM_sidDLNMbuild`, R_y, R_B_inner_list, R_knots_f, R_knots_w, R_Sw, R_SwR, R_Sf, R_SfR, R_Xrand, R_Xfix, R_Zf, R_Xoffset, R_r, R_Bindex, R_alpha_f, R_con_index_par, R_log_theta, R_log_smoothing_f, R_log_smoothing_w, R_betaR, R_betaF, R_logsmoothing)
+sidDLNMbuild <- function(R_y, R_B_inner_list, R_knots_f, R_knots_w, R_Sw, R_SwR, R_Sf, R_SfR, R_Xrand, R_Xfix, R_Zf, R_Xoffset, R_r, R_Bindex, R_alpha_f, R_con_index_par, R_log_theta, R_log_smoothing_f, R_log_smoothing_w, R_betaR, R_betaF, R_logsmoothing, gaussian = FALSE) {
+    .Call(`_SIdrfDLNM_sidDLNMbuild`, R_y, R_B_inner_list, R_knots_f, R_knots_w, R_Sw, R_SwR, R_Sf, R_SfR, R_Xrand, R_Xfix, R_Zf, R_Xoffset, R_r, R_Bindex, R_alpha_f, R_con_index_par, R_log_theta, R_log_smoothing_f, R_log_smoothing_w, R_betaR, R_betaF, R_logsmoothing, gaussian)
 }
 
 sidDLNMopt <- function(ptr, ptrcppad, R_alpha_f, R_con_index_par, R_log_theta, R_log_smoothing_f, R_log_smoothing_w, R_betaR, R_betaF, R_logsmoothing, ifgradient, verbose) {

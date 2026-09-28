@@ -39,3 +39,7 @@ Dunn, Peter K., and Gordon K. Smyth. \dQuote{Randomized quantile
 residuals}. Journal of Computational and graphical statistics 5.3 (1996):
 236-244.
 }
+
+\details{
+Gaussian residuals are (y - mu) / theta, where theta is the fitted SD; no quantile randomization is used.
+}

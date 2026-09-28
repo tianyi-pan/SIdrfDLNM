@@ -12,6 +12,9 @@
 #' @method NCV sidDLNM_fit
 #' @exportS3Method mDLNM::NCV
 NCV.sidDLNM_fit <- function(object, kNCV = 0, NCV.nthreads = 1, verbose = FALSE, ...) {
+  family <- if(is.null(object$family)) "nb" else object$family
+  gaussian <- identical(family, "gaussian")
+
 
   if(verbose) cat("reconstruct the model class for cpp ... \n")
   dat <- object$inputdata
@@ -284,7 +287,7 @@ NCV.sidDLNM_fit <- function(object, kNCV = 0, NCV.nthreads = 1, verbose = FALSE,
   #   Xoffset.original.min <- 0
   #   Xoffset <- as.vector(rep(0, nrow(sXdat)))
   # }
-  Xoffset <- object$data$offset$Xoffset
+  Xoffset <- if(gaussian) rep(0, nrow(sXdat)) else object$data$offset$Xoffset
 
 
 
@@ -315,7 +318,7 @@ NCV.sidDLNM_fit <- function(object, kNCV = 0, NCV.nthreads = 1, verbose = FALSE,
                                  object$point$alpha_f,
                                  object$point$delta,
                                  object$point$log_theta, object$point$log_smoothing_f, object$point$log_smoothing_w,
-                                 object$point$betaR, object$point$betaF, object$point$log_smoothing)
+                                 object$point$betaR, object$point$betaF, object$point$log_smoothing, gaussian)
 
   mod.address <- mod.build$address.eigen
   ad.address <- mod.build$address.cppad

@@ -14,10 +14,13 @@ dDLNM(
   M,
   maxL,
   verbose,
-  con.index.init
+  con.index.init,
+  family = "nb"
 )
 }
 \arguments{
+\item{family}{Outcome family: "nb" (default) or "gaussian" with identity link.}
+
 \item{verbose}{}
 }
 \description{
