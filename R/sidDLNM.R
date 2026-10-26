@@ -7,6 +7,7 @@
 #' @param smooth the formula for the other smooth functions. The smooths are
 #'   specified by mgcv::s. For example ~ s(z). Note also that the Gaussian
 #'   random effect models are accommodated, by setting s(bs = "re").
+#'   Use NULL (the default) when no additional smooth terms are needed.
 #' @param unpen.smooth the formula for the other unpenalized smooth functions.
 #' @param fe.varying the formula for time-varying covariates in linear
 #'   components. For example ~ z
@@ -315,6 +316,9 @@ SIdrfDLNM <- function(formula,
     model.choice = "with.smooth"
   } else{
     model.choice = "without.smooth"
+    Xrand <- matrix(0, nrow(sXdat), 0)
+    Xfix <- matrix(0, nrow(sXdat), 0)
+    r <- m <- numeric(0)
   }
 
 
@@ -454,26 +458,16 @@ SIdrfDLNM <- function(formula,
   }
 
   ## A list to store the optimization results at given smoothing log_theta.given, log_smoothing_f.given, log_smoothing_w.given.
-  if(model.choice == "with.smooth") {
-    betaR.init.default <- rep(0,ncol(Xrand))
-    LAMLenv <- list(par = NULL,
-                    fn = NULL,
-                    gr = NULL,
-                    mod = list(alpha_f.mod = alpha_f.init.default,
-                              betaF.mod = betaF.init.default,
-                              betaR.mod = betaR.init.default,
-                              delta.mod = delta.init.default),
-                    iter = 0,
-                    PLg = 0)
-  } else {
-    # LAMLenv <- list(par = NULL,
-    #             fn = NULL,
-    #             gr = NULL,
-    #             mod = list(phi.mod = phi.init.default, alpha_f.mod = alpha_f.init.default,
-    #                         betaF.mod = betaF.init.default))
-    cat("NOT supported. TODO")
-    return(0)
-  }
+  betaR.init.default <- rep(0,ncol(Xrand))
+  LAMLenv <- list(par = NULL,
+                  fn = NULL,
+                  gr = NULL,
+                  mod = list(alpha_f.mod = alpha_f.init.default,
+                            betaF.mod = betaF.init.default,
+                            betaR.mod = betaR.init.default,
+                            delta.mod = delta.init.default),
+                  iter = 0,
+                  PLg = 0)
 
   initLAMLenv <- function() {
     LAMLenv <<- list(par = NULL,
@@ -498,7 +492,7 @@ SIdrfDLNM <- function(formula,
     log_theta.given <- par[1]
     log_smoothing_f.given <- par[2]
     log_smoothing_w.given <- par[3]
-    if(model.choice == "with.smooth") logsmoothing.given <- par[-(1:3)]
+    logsmoothing.given <- par[-(1:3)]
 
     ## Inner opt
     alpha_f.init <- LAMLenv$mod$alpha_f.mod
@@ -508,17 +502,15 @@ SIdrfDLNM <- function(formula,
     delta.init <- LAMLenv$mod$delta.mod
     if(any(is.nan(delta.init))) delta.init <- delta.init.default
 
-    if(model.choice == "with.smooth"){
-      betaR.init <- LAMLenv$mod$betaR.mod
-      if(any(is.nan(betaR.init))) betaR.init <- betaR.init.default
-      mod.build <- sidDLNMbuild(y, B_inner, SSf$knots, SSw$knots, Sw, SwR, Sf, SfR,
-                                 Xrand, Xfix, Zf, Xoffset, r,
-                                 Bindex,
-                                 alpha_f.init,
-                                 delta.init,
-                                 log_theta.given, log_smoothing_f.given, log_smoothing_w.given,
-                                 betaR.init, betaF.init, logsmoothing.given, gaussian)
-    }
+    betaR.init <- LAMLenv$mod$betaR.mod
+    if(any(is.nan(betaR.init))) betaR.init <- betaR.init.default
+    mod.build <- sidDLNMbuild(y, B_inner, SSf$knots, SSw$knots, Sw, SwR, Sf, SfR,
+                               Xrand, Xfix, Zf, Xoffset, r,
+                               Bindex,
+                               alpha_f.init,
+                               delta.init,
+                               log_theta.given, log_smoothing_f.given, log_smoothing_w.given,
+                               betaR.init, betaF.init, logsmoothing.given, gaussian)
     if(verbose) cat("Done.")
     mod.build
   }
@@ -529,7 +521,7 @@ SIdrfDLNM <- function(formula,
     log_theta.given <- par[1]
     log_smoothing_f.given <- par[2]
     log_smoothing_w.given <- par[3]
-    if(model.choice == "with.smooth") logsmoothing.given <- par[-(1:3)]
+    logsmoothing.given <- par[-(1:3)]
     ## Inner opt
     if(is.null(LAMLenv$par) | !all(par == LAMLenv$par)) {
       ## Inner opt
@@ -550,30 +542,27 @@ SIdrfDLNM <- function(formula,
         }
       }
 
-      if(model.choice == "with.smooth"){
-        betaR.init <- LAMLenv$mod$betaR.mod
-        if(any(is.nan(betaR.init))) betaR.init <- betaR.init.default
+      betaR.init <- LAMLenv$mod$betaR.mod
+      if(any(is.nan(betaR.init))) betaR.init <- betaR.init.default
 
-        LAML.results <- sidDLNMopt(mod.address,
-                                    ad.address,
-                                    alpha_f.init,
-                                    delta.init,
-                                    log_theta.given, log_smoothing_f.given, log_smoothing_w.given,
-                                    betaR.init, betaF.init, logsmoothing.given,
-                                    ifgradient, 
-                                    verbose)
-        LAMLenv$par <<- par
-        LAMLenv$mod$alpha_f.mod <<- LAML.results$alpha_f.mod
-        LAMLenv$mod$delta.mod <<- LAML.results$con_index_par.mod
-        LAMLenv$mod$betaF.mod <<- LAML.results$betaF.mod
-        LAMLenv$mod$betaR.mod <<- LAML.results$betaR.mod
-        LAMLenv$fn <<- LAML.results$LAML.fn
-        LAMLenv$gr <<- LAML.results$LAML.gradient
-        LAMLenv$iter <<- LAMLenv$iter + 1
-        LAMLenv$PLg <<- LAML.results$PLg
-      } else {
-        cat("NOT supported. TODO")
-      }
+      LAML.results <- sidDLNMopt(mod.address,
+                                  ad.address,
+                                  alpha_f.init,
+                                  delta.init,
+                                  log_theta.given, log_smoothing_f.given, log_smoothing_w.given,
+                                  betaR.init, betaF.init, logsmoothing.given,
+                                  ifgradient,
+                                  verbose)
+      LAMLenv$par <<- par
+      LAMLenv$mod$alpha_f.mod <<- LAML.results$alpha_f.mod
+      LAMLenv$mod$delta.mod <<- LAML.results$con_index_par.mod
+      LAMLenv$mod$betaF.mod <<- LAML.results$betaF.mod
+      LAMLenv$mod$betaR.mod <<- LAML.results$betaR.mod
+      LAMLenv$fn <<- LAML.results$LAML.fn
+      LAMLenv$gr <<- LAML.results$LAML.gradient
+      LAMLenv$iter <<- LAMLenv$iter + 1
+      LAMLenv$PLg <<- LAML.results$PLg
+
 
     }
   }
@@ -784,33 +773,19 @@ SIdrfDLNM <- function(formula,
     out$smooth$fE <- SSf
   }
 
-  if(model.choice == "with.smooth") {
-    log_smoothing.opt <- LAMLenv$par[-(1:3)]
-    betaR.opt <- LAMLenv$mod$betaR.mod
-    out$point$betaR = betaR.opt
-    out$point$log_smoothing = log_smoothing.opt
-  }
+  log_smoothing.opt <- LAMLenv$par[-(1:3)]
+  betaR.opt <- LAMLenv$mod$betaR.mod
+  out$point$betaR = betaR.opt
+  out$point$log_smoothing = log_smoothing.opt
 
   ## CI
   if(verbose) {
     cat("Start sampling for CI ... \n")
     start <- Sys.time()
   }
-  if(model.choice == "with.smooth") {
-    sampled <- sidDLNMCI(mod.address,
-                         CI.R, CI.seed,
-                         eta, verbose)
-  } else {
-    # sampled <- sidDLNMCI_nosmooth(y, B_inner, SSf$knots, SwI, SfI, Dw,
-    #                               Xfix, Zfnew, Xoffset,
-    #                                  LAMLenv$mod$alpha_f.mod,
-    #                                   phi.opt,
-    #                                   log_theta.opt, log_smoothing_f.opt, log_smoothing_w.opt,
-    #                                   betaF.opt,
-    #                                   CI.R, CI.seed,
-    #                                   eta, delta.method, verbose)
-    cat("NOT supported. TODO")
-  }
+  sampled <- sidDLNMCI(mod.address,
+                       CI.R, CI.seed,
+                       eta, verbose)
 
   eta.est <- sampled$eta_point
   eta_E.est <- sampled$eta_E_point
@@ -887,6 +862,10 @@ SIdrfDLNM <- function(formula,
     out$data$r = r
     out$data$m = m
     out$smooth$others = SS
+  } else {
+    out$data$Xrand = Xrand
+    out$data$r = r
+    out$data$m = m
   }
   # if(!is.null(unpen.smooth)) {
   #   out$smooth$unpen.smooth = unpen.SS

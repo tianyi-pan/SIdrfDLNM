@@ -231,6 +231,9 @@ AIC.sidDLNM_fit <- function(object, verbose = FALSE, marginalAIC = FALSE) {
     model.choice = "with.smooth"
   } else{
     model.choice = "without.smooth"
+    Xrand <- matrix(0, nrow(sXdat), 0)
+    Xfix <- matrix(0, nrow(sXdat), 0)
+    r <- numeric(0)
   }
 
 

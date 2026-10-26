@@ -242,6 +242,9 @@ predict.sidDLNM_fit <- function(object, dat, CI.seed = 123, CI = 0.95, ...) {
     model.choice = "with.smooth"
   } else{
     model.choice = "without.smooth"
+    Xrand <- matrix(0, nrow(sXdat), 0)
+    Xfix <- matrix(0, nrow(sXdat), 0)
+    r <- numeric(0)
   }
 
 

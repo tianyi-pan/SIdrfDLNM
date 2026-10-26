@@ -253,6 +253,9 @@ NCV.sidDLNM_fit <- function(object, kNCV = 0, NCV.nthreads = 1, verbose = FALSE,
     model.choice = "with.smooth"
   } else{
     model.choice = "without.smooth"
+    Xrand <- matrix(0, nrow(sXdat), 0)
+    Xfix <- matrix(0, nrow(sXdat), 0)
+    r <- numeric(0)
   }
 
 
