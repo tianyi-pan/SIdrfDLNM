@@ -848,6 +848,7 @@ SIdrfDLNM <- function(formula,
   out$data$knots_f = SSf$knots
   out$data$knots_w = SSw$knots
   out$data$Zf = Zf
+  out$data$Bindex = Bindex
   out$data$shift = shift
   out$data$offset = list(Xoffset.original = Xoffset.original,
                          Xoffset.original.min = Xoffset.original.min,

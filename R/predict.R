@@ -6,6 +6,8 @@
 #' @param dat the data frame containing the variables.
 #' @param CI.seed random seed for sampling, default \code{123}.
 #' @param CI confidence level, default \code{0.95}.
+#' @param .build.only Internal use by \code{SLdata()}: return the reconstructed
+#'   model without drawing coefficient samples, default \code{FALSE}.
 #' @param ...
 #'
 #' @return
@@ -13,7 +15,7 @@
 #' @importFrom data.table as.data.table
 #' @importFrom data.table setorder
 #' @export
-predict.sidDLNM_fit <- function(object, dat, CI.seed = 123, CI = 0.95, ...) {
+predict.sidDLNM_fit <- function(object, dat, CI.seed = 123, CI = 0.95, .build.only = FALSE, ...) {
   family <- if(is.null(object$family)) "nb" else object$family
   gaussian <- identical(family, "gaussian")
 
@@ -311,6 +313,8 @@ predict.sidDLNM_fit <- function(object, dat, CI.seed = 123, CI = 0.95, ...) {
                                  object$point$delta,
                                  object$point$log_theta, object$point$log_smoothing_f, object$point$log_smoothing_w,
                                  object$point$betaR, object$point$betaF, object$point$log_smoothing, gaussian)
+
+  if(.build.only) return(mod.build)
 
   mod.address <- mod.build$address.eigen
 

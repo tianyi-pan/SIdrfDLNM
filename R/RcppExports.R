@@ -85,6 +85,10 @@ NCVsidDLNM <- function(ptr, nei_list, verbose = FALSE, nthreads = 1L) {
     .Call(`_SIdrfDLNM_NCVsidDLNM`, ptr, nei_list, verbose, nthreads)
 }
 
+SLdatasidDLNM <- function(ptr, ptr_cf, verbose = FALSE, aic = FALSE, nthreads = 1L, coef_samples = NULL) {
+    .Call(`_SIdrfDLNM_SLdatasidDLNM`, ptr, ptr_cf, verbose, aic, nthreads, coef_samples)
+}
+
 BsplinevecCon1st <- function(x, t, p, Z) {
     .Call(`_SIdrfDLNM_BsplinevecCon1st`, x, t, p, Z)
 }

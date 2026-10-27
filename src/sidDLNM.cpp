@@ -1627,3 +1627,161 @@ List NCVsidDLNM(SEXP ptr, const List nei_list, bool verbose = false, int nthread
                       );
 
 }
+
+// [[Rcpp::export]]
+List SLdatasidDLNM(SEXP ptr, SEXP ptr_cf, bool verbose = false, bool aic = false, int nthreads = 1, Rcpp::Nullable<Rcpp::NumericMatrix> coef_samples = R_NilValue) {
+  if(nthreads < 1) Rcpp::stop("nthreads must be at least 1.");
+  #ifdef _OPENMP
+    if(verbose && nthreads > 1) Rcpp::Rcout << "Using " << nthreads << " threads for deletion calculations.\n";
+  #else
+    if(nthreads > 1) Rcpp::Rcout << "Warning: OpenMP is OFF. Using one thread.\n";
+  #endif
+  Rcpp::XPtr<Model> modelobj_ptr(ptr);
+  Model& modelobj = *modelobj_ptr;
+  int n = modelobj.n;
+  int p = modelobj.kE + modelobj.mE - 1 + modelobj.kbetaR + modelobj.kbetaF;
+  if(ptr_cf == R_NilValue) Rcpp::stop("Counterfactual data are required.");
+  Rcpp::XPtr<Model> counterfactual_ptr(ptr_cf);
+  Model& counterfactual = *counterfactual_ptr;
+  if(counterfactual.n != n || counterfactual.kE != modelobj.kE ||
+     counterfactual.mE != modelobj.mE || counterfactual.kbetaR != modelobj.kbetaR ||
+     counterfactual.kbetaF != modelobj.kbetaF) {
+    Rcpp::stop("Counterfactual data must retain the fitted records and model structure.");
+  }
+  Eigen::VectorXd beta_mod(p);
+  beta_mod << modelobj.alpha_f, modelobj.con_index_par, modelobj.betaR, modelobj.betaF;
+
+  modelobj.derivative_coef();
+  modelobj.derivative_he();
+  modelobj.derivative_full();
+  modelobj.prepare_AIC();
+  // The last coordinate of IS_mat and Kleft is log_theta; keep it fixed.
+  Eigen::MatrixXd Hpen = modelobj.IS_mat.topLeftCorner(p, p);
+  Eigen::MatrixXd Kleft = modelobj.Kleft.topRows(p);
+
+  auto mortality_ratio = [&](const Eigen::VectorXd& beta) {
+    double baseline = 0.0, intervention = 0.0;
+    for(int r = 0; r < n; r++) {
+      baseline += modelobj.get_mu_i(beta, r);
+      intervention += counterfactual.get_mu_i(beta, r);
+    }
+    return intervention / baseline;
+  };
+  double delta = mortality_ratio(beta_mod);
+
+  if(aic) {
+    // Keep the full-fit model unchanged for the coefficient deletion updates.
+    auto criterion = [&](Model& evaluation, int deleted) {
+      evaluation.derivative_coef();
+      evaluation.derivative_he();
+      evaluation.derivative_full();
+      evaluation.prepare_AIC();
+      double loss = evaluation.NegLogL_l;
+      Eigen::MatrixXd H = evaluation.IS_mat;
+      Eigen::MatrixXd I = evaluation.I_mat;
+      Eigen::MatrixXd Khat = evaluation.Khat;
+      if(deleted >= 0) {
+        Eigen::VectorXd nei(1);
+        nei(0) = deleted + 1;
+        Eigen::MatrixXd Hi = evaluation.prepare_NCV(nei);
+        H -= Hi;
+        I -= Hi;
+        Khat -= evaluation.Kleft.col(deleted) * evaluation.Kleft.col(deleted).transpose();
+        loss -= evaluation.get_D_i(evaluation.alpha_f, evaluation.con_index_par,
+                                    evaluation.betaR, evaluation.betaF, evaluation.log_theta, deleted);
+      }
+      // Preserve the existing AIC definition, including its dispersion coordinate.
+      Eigen::MatrixXd V = H.ldlt().solve(Eigen::MatrixXd::Identity(H.rows(), H.cols()));
+      Eigen::VectorXd out(2);
+      out << 2.0 * loss + 2.0 * (V * I).trace(),
+             2.0 * loss + 2.0 * (Khat * V).trace();
+      return out;
+    };
+    Model evaluation(modelobj);
+    Eigen::VectorXd aic_full = criterion(evaluation, -1);
+    if(coef_samples.isNull()) Rcpp::stop("AICdata() requires stored coefficient samples.");
+    Eigen::MatrixXd samples = Rcpp::as<Eigen::MatrixXd>(coef_samples.get());
+    if(samples.rows() < 2 || samples.cols() != p) {
+      Rcpp::stop("AICdata() requires at least two samples of the fitted coefficients.");
+    }
+    Eigen::VectorXd delta_sample(samples.rows());
+    for(int j = 0; j < samples.rows(); j++) {
+      if(j % 100 == 0) Rcpp::checkUserInterrupt();
+      delta_sample(j) = mortality_ratio(samples.row(j).transpose());
+    }
+    Eigen::MatrixXd aic_loo(n, 2);
+    Eigen::VectorXd delta_loo(n);
+    for(int start = 0; start < n; start += 100) {
+      Rcpp::checkUserInterrupt();
+      int end = std::min(start + 100, n);
+      #ifdef _OPENMP
+        #pragma omp parallel num_threads(nthreads) if(nthreads > 1)
+      #endif
+      {
+        Model local_model(modelobj), local_evaluation(modelobj);
+        Eigen::VectorXd nei(1);
+        #ifdef _OPENMP
+          #pragma omp for schedule(static, 1)
+        #endif
+        for(int i = start; i < end; i++) {
+          nei(0) = i + 1;
+          Eigen::MatrixXd Hi = local_model.prepare_NCV(nei).topLeftCorner(p, p);
+          Eigen::VectorXd beta_i = beta_mod - (Hpen - Hi).completeOrthogonalDecomposition().solve(Kleft.col(i));
+          delta_loo(i) = mortality_ratio(beta_i);
+          local_evaluation.setCon_Index_Par(beta_i.segment(modelobj.kE, modelobj.mE - 1));
+          local_evaluation.setAlphaF(beta_i.head(modelobj.kE));
+          local_evaluation.setBetaR(beta_i.segment(modelobj.kE + modelobj.mE - 1, modelobj.kbetaR));
+          local_evaluation.setBetaF(beta_i.tail(modelobj.kbetaF));
+          aic_loo.row(i) = criterion(local_evaluation, i).transpose();
+        }
+      }
+      if(verbose) {
+        Rcpp::Rcout << "AIC deletion " << end << " / " << n << "\n";
+      }
+    }
+    return List::create(Named("aic") = aic_full, Named("aic.loo") = aic_loo,
+                        Named("delta") = delta, Named("delta.loo") = delta_loo,
+                        Named("delta.sample") = delta_sample);
+  }
+
+  Eigen::VectorXd mu_loo(n), delta_loo(n);
+  Eigen::MatrixXd mu_lto = Eigen::MatrixXd::Constant(n, n, NA_REAL);
+  for(int start = 0; start < n; start += 100) {
+    Rcpp::checkUserInterrupt();
+    int end = std::min(start + 100, n);
+    #ifdef _OPENMP
+      #pragma omp parallel num_threads(nthreads) if(nthreads > 1)
+    #endif
+    {
+      Model local_model(modelobj);
+      Eigen::VectorXd nei(1);
+      #ifdef _OPENMP
+        #pragma omp for schedule(static, 1)
+      #endif
+      for(int i = start; i < end; i++) {
+        nei(0) = i + 1;
+        Eigen::MatrixXd Hi = local_model.prepare_NCV(nei).topLeftCorner(p, p);
+        Eigen::VectorXd beta_i = beta_mod - (Hpen - Hi).completeOrthogonalDecomposition().solve(Kleft.col(i));
+        mu_loo(i) = modelobj.get_mu_i(beta_i, i);
+        delta_loo(i) = mortality_ratio(beta_i);
+
+        for(int j = i + 1; j < n; j++) {
+          nei(0) = j + 1;
+          Eigen::MatrixXd Hj = local_model.prepare_NCV(nei).topLeftCorner(p, p);
+          Eigen::VectorXd beta_ij = beta_mod - (Hpen - Hi - Hj).completeOrthogonalDecomposition().solve(Kleft.col(i) + Kleft.col(j));
+          // Rows identify the outer deletion; columns identify the validation record.
+          mu_lto(i, j) = modelobj.get_mu_i(beta_ij, j);
+          mu_lto(j, i) = modelobj.get_mu_i(beta_ij, i);
+        }
+      }
+    }
+    if(verbose) {
+      Rcpp::Rcout << "Super Learner quantities: " << end << " / " << n << "\n";
+    }
+  }
+
+  return List::create(Named("mu.loo") = mu_loo,
+                      Named("mu.lto") = mu_lto,
+                      Named("delta") = delta,
+                      Named("delta.loo") = delta_loo);
+}

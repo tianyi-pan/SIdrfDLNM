@@ -3,6 +3,7 @@
 S3method(AIC,sidDLNM_fit)
 S3method(mDLNM::NCV,sidDLNM_fit)
 S3method(mDLNM::RateRatio,sidDLNM_fit)
+S3method(mDLNM::SLdata,sidDLNM_fit)
 S3method(predict,sidDLNM_fit)
 S3method(residuals,sidDLNM_fit)
 S3method(summary,sidDLNM_fit)

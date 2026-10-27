@@ -12,11 +12,12 @@ Authors@R: c(
 Description: Fit single index distributed response function distributed lag non-linear models
 License: GPL (>= 3)
 Encoding: UTF-8
+Depends:
+    mgcv
 Imports: 
     Rcpp (>= 1.0.12),
     RcppEigen,
     Matrix,
-    mgcv,
 		ggplot2,
 		dplyr,
 		dlnm,
