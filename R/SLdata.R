@@ -1,6 +1,7 @@
 #' Prepare Super Learner quantities for a single-index DRF-DLNM
 #'
-#' @param object An object of class \code{sidDLNM_fit}.
+#' @param object An object of class \code{sidDLNM_fit}. For older fits without
+#'   \code{data$Bindex}, reconstruct the default basis using \code{cindex = rep(1, M)}.
 #' @param dat.c Required counterfactual data, including the full exposure
 #'   histories, on the predictor scale expected by \code{predict()}. Retain
 #'   the fitted reference records and model structure.
@@ -19,7 +20,16 @@ SLdata.sidDLNM_fit <- function(object, dat.c, verbose = FALSE,
 
   dat <- object$data
   point <- object$point
-  if(is.null(dat$Bindex)) stop("Refit this model to store Bindex before using SLdata().")
+  if(is.null(dat$Bindex)) {
+    M <- length(dat$B_inner)
+    cindex <- rep(1, M)
+    Iindex <- diag(1, nrow = M, ncol = M)
+    Vindex <- Iindex %*% cindex
+    Qfindex <- qr.Q(qr(Vindex), complete = TRUE)
+    Zfindex <- Qfindex[,2:ncol(Qfindex)]
+    dat$Bindex <- cbind(cindex, Iindex %*% Zfindex)
+    object$data$Bindex <- dat$Bindex
+  }
 
   coef.samples <- NULL
   if(AIC.only) {

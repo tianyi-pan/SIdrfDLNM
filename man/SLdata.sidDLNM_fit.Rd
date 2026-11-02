@@ -14,7 +14,8 @@
 )
 }
 \arguments{
-\item{object}{An object of class \code{sidDLNM_fit}.}
+\item{object}{An object of class \code{sidDLNM_fit}. For older fits without
+\code{data$Bindex}, reconstruct the default basis using \code{cindex = rep(1, M)}.}
 
 \item{dat.c}{Required counterfactual data, including the full exposure
 histories, on the predictor scale expected by \code{predict()}. Retain
