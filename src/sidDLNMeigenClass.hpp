@@ -758,8 +758,8 @@ public:
   }
 
 
-  // Mean at one reference record.
-  double get_mu_i(const Eigen::VectorXd& beta_i, int i) {
+  // Log-mean at one reference record.
+  double get_eta_i(const Eigen::VectorXd& beta_i, int i) {
     Eigen::VectorXd con_index_par_long_i(mE);
     con_index_par_long_i(0) = 1.0;
     con_index_par_long_i.tail(mE-1) = beta_i.segment(kE, mE-1);
@@ -780,7 +780,11 @@ public:
     double eta_i = Bf_i.dot(beta_i.head(kE)) +
       Xrand.row(i).dot(beta_i.segment(kE+mE-1, kbetaR)) +
       Xfix.row(i).dot(beta_i.tail(kbetaF)) + Xoffset(i);
-    return exp(eta_i);
+    return eta_i;
+  }
+
+  double get_mu_i(const Eigen::VectorXd& beta_i, int i) {
+    return exp(get_eta_i(beta_i, i));
   }
 
   double get_p_i (Eigen::VectorXd alpha_f_i, Eigen::VectorXd con_index_par_i,

@@ -1659,13 +1659,17 @@ List SLdatasidDLNM(SEXP ptr, SEXP ptr_cf, bool verbose = false, bool aic = false
   Eigen::MatrixXd Hpen = modelobj.IS_mat.topLeftCorner(p, p);
   Eigen::MatrixXd Kleft = modelobj.Kleft.topRows(p);
 
+  auto log_sum_exp = [](const Eigen::VectorXd& eta) {
+    double m = eta.maxCoeff();
+    return m + std::log((eta.array() - m).exp().sum());
+  };
   auto mortality_ratio = [&](const Eigen::VectorXd& beta) {
-    double baseline = 0.0, intervention = 0.0;
+    Eigen::VectorXd baseline(n), intervention(n);
     for(int r = 0; r < n; r++) {
-      baseline += modelobj.get_mu_i(beta, r);
-      intervention += counterfactual.get_mu_i(beta, r);
+      baseline(r) = modelobj.get_eta_i(beta, r);
+      intervention(r) = counterfactual.get_eta_i(beta, r);
     }
-    return intervention / baseline;
+    return std::exp(log_sum_exp(intervention) - log_sum_exp(baseline));
   };
   double delta = mortality_ratio(beta_mod);
 
