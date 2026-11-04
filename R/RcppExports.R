@@ -89,6 +89,14 @@ SLdatasidDLNM <- function(ptr, ptr_cf, verbose = FALSE, aic = FALSE, nthreads = 
     .Call(`_SIdrfDLNM_SLdatasidDLNM`, ptr, ptr_cf, verbose, aic, nthreads, coef_samples)
 }
 
+SLinit <- function(data, fold, cache = NULL) {
+    .Call(`_SIdrfDLNM_SLinit`, data, fold, cache)
+}
+
+SLdelete <- function(ptr, i) {
+    .Call(`_SIdrfDLNM_SLdelete`, ptr, i)
+}
+
 BsplinevecCon1st <- function(x, t, p, Z) {
     .Call(`_SIdrfDLNM_BsplinevecCon1st`, x, t, p, Z)
 }

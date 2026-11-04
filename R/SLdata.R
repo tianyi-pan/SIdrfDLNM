@@ -7,9 +7,9 @@
 #'   the fitted reference records and model structure.
 #' @param verbose Whether to print progress.
 #' @param AIC.only Prepare singleton AIC quantities for \code{mDLNM::AICdata}
-#'   instead of the Super Learner predicted means, default \code{FALSE}.
-#' @param nthreads Number of threads for deletion calculations, default \code{1}.
-#'   Uses OpenMP for parallel calculation.
+#'   instead of reusable Super Learner data, default \code{FALSE}.
+#' @param nthreads Number of OpenMP threads for AIC deletion calculations,
+#'   default \code{1}. Super Learner workers are set in \code{SuperLearner()}.
 #' @param ... Unused.
 #' @exportS3Method mDLNM::SLdata
 SLdata.sidDLNM_fit <- function(object, dat.c, verbose = FALSE,
@@ -65,12 +65,12 @@ SLdata.sidDLNM_fit <- function(object, dat.c, verbose = FALSE,
                 estimand = "ratio"))
   }
 
-  return(list(y = dat$y,
-              row.id = rownames(object$modeldata),
-              theta = theta,
-              mu.loo = as.vector(result$mu.loo),
-              mu.lto = result$mu.lto,
-              delta = result$delta,
-              delta.loo = as.vector(result$delta.loo),
+  result$model <- dat[c("y", "B_inner", "knots_f", "knots_w", "Sw", "SwR",
+                         "Sf", "SfR", "Xrand", "Xfix", "Zf", "r", "Bindex")]
+  result$model$Xoffset <- dat$offset$Xoffset
+  result$point <- point[c("alpha_f", "delta", "log_theta", "log_smoothing_f",
+                          "log_smoothing_w", "betaR", "betaF", "log_smoothing")]
+  return(list(y = dat$y, row.id = rownames(object$modeldata), theta = theta,
+              delta = result$delta, data = result, package = "SIdrfDLNM",
               estimand = "ratio"))
 }

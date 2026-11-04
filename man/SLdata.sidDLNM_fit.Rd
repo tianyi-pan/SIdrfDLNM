@@ -24,20 +24,19 @@ the fitted reference records and model structure.}
 \item{verbose}{Whether to print progress.}
 
 \item{AIC.only}{Prepare singleton AIC quantities for \code{mDLNM::AICdata}
-instead of the Super Learner predicted means, default \code{FALSE}.}
+instead of reusable Super Learner data, default \code{FALSE}.}
 
-\item{nthreads}{Number of threads for deletion calculations, default \code{1}.
-Uses OpenMP for parallel calculation.}
+\item{nthreads}{Number of OpenMP threads for AIC deletion calculations,
+default \code{1}. Super Learner workers are set in \code{SuperLearner()}.}
 
 \item{...}{Unused.}
 }
 \value{
-A list of leave-one-out means (\code{mu.loo}) and leave-two-out means
-  (\code{mu.lto}; outer deletion in rows and validation observation in columns),
-  full-data and delete-one mortality ratios, and observation information.
+Reusable model data and the full-data mortality ratio, together with
+  observation information. No pairwise prediction matrix is stored.
   \code{delta} is sum(mu_counterfactual) / sum(mu_baseline), and
   \code{estimand} is \code{"ratio"}.
-  With \code{AIC.only = TRUE}, predicted means are replaced by \code{aic},
+  With \code{AIC.only = TRUE}, the result instead contains \code{aic},
   \code{aic.loo}, and the model-specific sample \code{variance}.
 }
 \description{
@@ -47,8 +46,8 @@ Prepare Super Learner quantities for a single-index DRF-DLNM
 Smoothing parameters and dispersion remain at their fitted values.
   Deletion estimates use the NCV Newton approximation. The reference records
   remain fixed. Counterfactual data are prepared using the
-  prediction code without drawing coefficient samples. Pairwise calculations
-  require quadratic storage.
+  prediction code without drawing coefficient samples. Cross-validation folds
+  and delete-one calculations are handled by \code{mDLNM::SuperLearner()}.
   In AIC mode, both existing conditional AIC definitions are recalculated on
   each reduced fitting sample, while the reference records remain fixed.
   The model-specific variance is \code{var(par.sample)}, using the stored
