@@ -364,27 +364,29 @@ BEGIN_RCPP
 END_RCPP
 }
 // SLinit
-List SLinit(List data, IntegerVector fold, Rcpp::Nullable<Rcpp::List> cache);
-RcppExport SEXP _SIdrfDLNM_SLinit(SEXP dataSEXP, SEXP foldSEXP, SEXP cacheSEXP) {
+List SLinit(List data, IntegerVector fold, int nthreads, bool verbose);
+RcppExport SEXP _SIdrfDLNM_SLinit(SEXP dataSEXP, SEXP foldSEXP, SEXP nthreadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type data(dataSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type fold(foldSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type cache(cacheSEXP);
-    rcpp_result_gen = Rcpp::wrap(SLinit(data, fold, cache));
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(SLinit(data, fold, nthreads, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // SLdelete
-List SLdelete(SEXP ptr, int i);
-RcppExport SEXP _SIdrfDLNM_SLdelete(SEXP ptrSEXP, SEXP iSEXP) {
+List SLdelete(SEXP ptr, int i, int nthreads);
+RcppExport SEXP _SIdrfDLNM_SLdelete(SEXP ptrSEXP, SEXP iSEXP, SEXP nthreadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type ptr(ptrSEXP);
     Rcpp::traits::input_parameter< int >::type i(iSEXP);
-    rcpp_result_gen = Rcpp::wrap(SLdelete(ptr, i));
+    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(SLdelete(ptr, i, nthreads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -440,8 +442,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_SIdrfDLNM_ConditionalAICsidDLNM", (DL_FUNC) &_SIdrfDLNM_ConditionalAICsidDLNM, 5},
     {"_SIdrfDLNM_NCVsidDLNM", (DL_FUNC) &_SIdrfDLNM_NCVsidDLNM, 4},
     {"_SIdrfDLNM_SLdatasidDLNM", (DL_FUNC) &_SIdrfDLNM_SLdatasidDLNM, 6},
-    {"_SIdrfDLNM_SLinit", (DL_FUNC) &_SIdrfDLNM_SLinit, 3},
-    {"_SIdrfDLNM_SLdelete", (DL_FUNC) &_SIdrfDLNM_SLdelete, 2},
+    {"_SIdrfDLNM_SLinit", (DL_FUNC) &_SIdrfDLNM_SLinit, 4},
+    {"_SIdrfDLNM_SLdelete", (DL_FUNC) &_SIdrfDLNM_SLdelete, 3},
     {"_SIdrfDLNM_BsplinevecCon1st", (DL_FUNC) &_SIdrfDLNM_BsplinevecCon1st, 4},
     {"_SIdrfDLNM_BsplinevecCon2nd", (DL_FUNC) &_SIdrfDLNM_BsplinevecCon2nd, 4},
     {NULL, NULL, 0}

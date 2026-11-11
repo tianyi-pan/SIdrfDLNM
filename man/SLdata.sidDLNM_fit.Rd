@@ -27,7 +27,7 @@ the fitted reference records and model structure.}
 instead of reusable Super Learner data, default \code{FALSE}.}
 
 \item{nthreads}{Number of OpenMP threads for AIC deletion calculations,
-default \code{1}. Super Learner workers are set in \code{SuperLearner()}.}
+default \code{1}. Super Learner threads are set in \code{SuperLearner(nthreads = ...)}.}
 
 \item{...}{Unused.}
 }

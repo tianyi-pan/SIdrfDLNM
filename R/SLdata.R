@@ -9,7 +9,7 @@
 #' @param AIC.only Prepare singleton AIC quantities for \code{mDLNM::AICdata}
 #'   instead of reusable Super Learner data, default \code{FALSE}.
 #' @param nthreads Number of OpenMP threads for AIC deletion calculations,
-#'   default \code{1}. Super Learner workers are set in \code{SuperLearner()}.
+#'   default \code{1}. Super Learner threads are set in \code{SuperLearner(nthreads = ...)}.
 #' @param ... Unused.
 #' @exportS3Method mDLNM::SLdata
 SLdata.sidDLNM_fit <- function(object, dat.c, verbose = FALSE,
